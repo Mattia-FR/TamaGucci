@@ -16,7 +16,7 @@ export default function PlayWithTama({ onPlay }: PlayWithTamaProps) {
 const styles = StyleSheet.create({
 	iconButton: {
 		margin: 5,
-		padding: 10,
+		// padding: 10,
 		borderWidth: 2, // Taille de la bordure
 		borderColor: "#2e3a59", // Couleur de la bordure
 		borderRadius: 15, // Rayon de la bordure pour les coins arrondis

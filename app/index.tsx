@@ -1,7 +1,5 @@
-// IndexScreen.js
-import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Toast from "react-native-toast-message";
+import { Snackbar } from "react-native-paper";
 
 import FeedTama from "./components/FeedTama";
 import PlayWithTama from "./components/PlayWithTama";
@@ -10,11 +8,14 @@ import RestTama from "./components/RestTama";
 import StatAlert from "./components/StatAlert";
 import PetAnimation from "./components/PetAnimation";
 import StatBars from "./components/StatBars";
-import { toastConfig } from "./utils/toastConfig";
 
-import useTamagotchiState from "./utils/useTamaState";
+import useTamaState from "./utils/useTamaState";
 import useFonts from "./utils/useFonts";
 import useNotifications from "./utils/useNotifications";
+import useTamaAge from "./utils/useTamaAge";
+
+import { useState } from "react";
+import { Button } from "react-native";
 
 export default function IndexScreen() {
 	// Initialiser les notifications
@@ -23,8 +24,15 @@ export default function IndexScreen() {
 	// Charger les polices
 	const { fontsLoaded } = useFonts();
 
-	// Gérer l'état du Tamagotchi
-	const { stats, healthState, actions, getStatColor } = useTamagotchiState();
+	// Gérer l'âge de Tama
+	const age = useTamaAge();
+
+	// Gérer l'état du Tama
+	const { stats, healthState, actions, getStatColor } = useTamaState();
+
+	const [visible, setVisible] = useState(false);
+	const showSnackbar = () => setVisible(true);
+	const hideSnackbar = () => setVisible(false);
 
 	// Si les polices ne sont pas chargées, affiche un écran de chargement
 	if (!fontsLoaded) {
@@ -33,10 +41,11 @@ export default function IndexScreen() {
 
 	return (
 		<View style={styles.container}>
-			<Text style={styles.textTitle}>Tama-chan</Text>
-			<Text style={styles.textText}>Âge: {stats.age}</Text>
+			<View style={styles.nameAge}>
+				<Text style={styles.textTitle}>Tama-chan</Text>
+				<Text style={styles.textText}>Âge: {age}</Text>
+			</View>
 
-			{/* Affichage des jauges pour chaque stat */}
 			<StatBars
 				happiness={stats.happiness}
 				hunger={stats.hunger}
@@ -45,14 +54,11 @@ export default function IndexScreen() {
 				getStatColor={getStatColor}
 			/>
 
-			{/* Affichage de l'animation du Tama */}
-			<PetAnimation isSick={healthState.isSick} />
-
-			{/* Alertes si stats critiques (Toast + Notification) */}
 			<StatAlert
 				hunger={stats.hunger}
 				energy={stats.energy}
 				cleanliness={stats.cleanliness}
+				happiness={stats.happiness}
 			/>
 
 			<View style={styles.iconContainer}>
@@ -62,8 +68,19 @@ export default function IndexScreen() {
 				<RestTama onRest={actions.rest} />
 			</View>
 
-			{/* Afficheur global pour les toasts */}
-			<Toast config={toastConfig} />
+			<PetAnimation isSick={healthState.isSick} style={styles.petAnim} />
+
+			<Button title="Show Snackbar" onPress={showSnackbar} />
+			<Snackbar
+				visible={visible}
+				onDismiss={hideSnackbar}
+				action={{
+					label: "Fermer",
+					onPress: hideSnackbar,
+				}}
+			>
+				C'est un message Snackbar !
+			</Snackbar>
 		</View>
 	);
 }
@@ -72,12 +89,22 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		alignItems: "center",
-		justifyContent: "center",
 		backgroundColor: "#bde2f0",
+	},
+	nameAge: {
+		width: "80%",
+		marginVertical: 20,
+		paddingBottom: 10,
+		alignItems: "center",
+		borderWidth: 2,
+		borderColor: "#2e3a59",
+		borderRadius: 15,
+		backgroundColor: "#bde2f0",
+		elevation: 10,
 	},
 	textTitle: {
 		fontFamily: "TitleFont",
-		fontSize: 42,
+		fontSize: 32,
 		color: "#2e3a59",
 	},
 	textText: {
@@ -87,7 +114,11 @@ const styles = StyleSheet.create({
 	},
 	iconContainer: {
 		flexDirection: "row",
-		justifyContent: "space-around",
-		width: "100%",
+		justifyContent: "space-between",
+		width: "80%",
+		marginTop: 20,
+	},
+	petAnim: {
+		margin: 20,
 	},
 });

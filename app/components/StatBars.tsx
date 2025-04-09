@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import * as Progress from "react-native-progress";
 
@@ -54,7 +53,7 @@ function StatBar({ label, value, color }: StatBarProps) {
 				width={100}
 				height={15}
 				color={color}
-				unfilledColor="#bde2f0"
+				unfilledColor="#f0f0f0"
 				borderRadius={8}
 			/>
 		</View>
@@ -64,14 +63,20 @@ function StatBar({ label, value, color }: StatBarProps) {
 const styles = StyleSheet.create({
 	statsContainer: {
 		width: "80%",
-		marginVertical: 20,
+		paddingBottom: 10,
 		alignItems: "center",
+		borderWidth: 2, // Taille de la bordure
+		borderColor: "#a94b4b", // Couleur de la bordure
+		borderRadius: 15, // Rayon de la bordure pour les coins arrondis
+		backgroundColor: "#f0f0f0",
+		elevation: 10,
 	},
 	statsRow: {
 		flexDirection: "row",
 		justifyContent: "space-around",
 		width: "100%",
-		marginBottom: 20,
+		marginBottom: 10,
+		paddingTop: 10,
 	},
 	statColumn: {
 		alignItems: "center",

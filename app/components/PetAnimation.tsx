@@ -1,14 +1,18 @@
 import React from "react";
 import LottieView from "lottie-react-native";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, type ViewStyle } from "react-native";
 
 interface PetAnimationProps {
 	isSick?: boolean;
+	style?: ViewStyle;
 }
 
-export default function PetAnimation({ isSick = false }: PetAnimationProps) {
+export default function PetAnimation({
+	isSick = false,
+	style,
+}: PetAnimationProps) {
 	return (
-		<View style={styles.container}>
+		<View style={style}>
 			<LottieView
 				source={require("../../assets/animations/Pet01.json")}
 				autoPlay
@@ -20,12 +24,6 @@ export default function PetAnimation({ isSick = false }: PetAnimationProps) {
 }
 
 const styles = StyleSheet.create({
-	container: {
-		width: "100%",
-		height: 300,
-		alignItems: "center",
-		justifyContent: "center",
-	},
 	animation: {
 		width: 200,
 		height: 200,

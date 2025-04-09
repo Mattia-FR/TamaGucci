@@ -1,15 +1,12 @@
-// hooks/useTamagotchiState.ts
-import { useState, useEffect } from "react";
-import Toast from "react-native-toast-message";
-import * as Notifications from "expo-notifications";
+import { useState, useEffect, useCallback } from "react";
+import { useSnackbar } from "../utils/SnackbarContext";
 
-const STAT_DECREASE_INTERVAL = 100000; // 100 secondes
-const STAT_DECREASE_AMOUNT = 5;
+type ActionName = "feed" | "play" | "clean" | "rest";
+
 const MIN_STAT_VALUE = 0;
 const MAX_STAT_VALUE = 100;
 
-// Niveaux critiques des statistiques
-const CRITICAL_LEVELS = {
+const criticalLevels = {
 	HUNGER: 10,
 	ENERGY: 10,
 	CLEANLINESS: 5,
@@ -17,12 +14,31 @@ const CRITICAL_LEVELS = {
 	RECOVERY_THRESHOLD: 30,
 };
 
+const DECAY_CONFIG = {
+	happiness: { interval: 120000, amount: 4 },
+	hunger: { interval: 90000, amount: 6 },
+	cleanliness: { interval: 150000, amount: 3 },
+	energy: { interval: 100000, amount: 5 },
+};
+
+const actionCooldowns: Record<ActionName, number> = {
+	feed: 30000,
+	play: 45000,
+	clean: 60000,
+	rest: 90000,
+};
+
+const abuseDetectionConfig = {
+	threshold: 3, // Y fois
+	window: 10000, // Z ms
+	blockDuration: 15000, // X ms
+};
+
 export interface TamagotchiStats {
 	happiness: number;
 	hunger: number;
 	cleanliness: number;
 	energy: number;
-	age: number;
 }
 
 export interface HealthState {
@@ -31,70 +47,71 @@ export interface HealthState {
 }
 
 export default function useTamagotchiState() {
-	// Regroupement des stats dans un seul objet d'état
+	const { showSnackbar } = useSnackbar();
 	const [stats, setStats] = useState<TamagotchiStats>({
 		happiness: 50,
 		hunger: 50,
 		cleanliness: 50,
 		energy: 50,
-		age: 0,
 	});
 
-	// État de santé
 	const [healthState, setHealthState] = useState<HealthState>({
 		isSick: false,
 		sickCounter: 0,
 	});
 
-	// Mettre à jour une stat spécifique avec limites
-	const updateStat = (
-		statName: keyof Omit<TamagotchiStats, "age">,
-		change: number,
-	) => {
-		setStats((prevStats) => ({
-			...prevStats,
-			[statName]: Math.max(
-				MIN_STAT_VALUE,
-				Math.min(prevStats[statName] + change, MAX_STAT_VALUE),
-			),
-		}));
-	};
+	const [lastActions, setLastActions] = useState<Record<string, number>>({});
+	const [actionHistory, setActionHistory] = useState<
+		Record<ActionName, number[]>
+	>({
+		feed: [],
+		play: [],
+		clean: [],
+		rest: [],
+	});
+	const [blockedActions, setBlockedActions] = useState<
+		Record<ActionName, boolean>
+	>({
+		feed: false,
+		play: false,
+		clean: false,
+		rest: false,
+	});
 
-	// Décrémenter les stats avec le temps
-	useEffect(() => {
-		const interval = setInterval(() => {
+	const updateStat = useCallback(
+		(statName: keyof TamagotchiStats, change: number) => {
 			setStats((prevStats) => ({
-				happiness: Math.max(
-					prevStats.happiness - STAT_DECREASE_AMOUNT,
+				...prevStats,
+				[statName]: Math.max(
 					MIN_STAT_VALUE,
+					Math.min(prevStats[statName] + change, MAX_STAT_VALUE),
 				),
-				hunger: Math.max(
-					prevStats.hunger - STAT_DECREASE_AMOUNT,
-					MIN_STAT_VALUE,
-				),
-				cleanliness: Math.max(
-					prevStats.cleanliness - STAT_DECREASE_AMOUNT,
-					MIN_STAT_VALUE,
-				),
-				energy: Math.max(
-					prevStats.energy - STAT_DECREASE_AMOUNT,
-					MIN_STAT_VALUE,
-				),
-				age: prevStats.age + 1,
 			}));
-		}, STAT_DECREASE_INTERVAL);
+		},
+		[],
+	);
 
-		return () => clearInterval(interval);
-	}, []);
+	// Déclin asymétrique
+	useEffect(() => {
+		const timers = Object.entries(DECAY_CONFIG).map(
+			([stat, { interval, amount }]) => {
+				return setInterval(() => {
+					updateStat(stat as keyof TamagotchiStats, -amount);
+				}, interval);
+			},
+		);
+		return () => timers.forEach(clearInterval);
+	}, [updateStat]);
 
-	// Gérer la maladie
+	// Maladie
+	// Premier useEffect : gestion du compteur de maladie
 	useEffect(() => {
 		const { hunger, energy, cleanliness } = stats;
 
 		if (
-			hunger <= CRITICAL_LEVELS.HUNGER ||
-			energy <= CRITICAL_LEVELS.ENERGY ||
-			cleanliness <= CRITICAL_LEVELS.CLEANLINESS
+			hunger <= criticalLevels.HUNGER ||
+			energy <= criticalLevels.ENERGY ||
+			cleanliness <= criticalLevels.CLEANLINESS
 		) {
 			setHealthState((prev) => ({
 				...prev,
@@ -106,10 +123,13 @@ export default function useTamagotchiState() {
 				sickCounter: 0,
 			}));
 		}
+	}, [stats]); // Ce useEffect ne dépend que de `stats`
 
-		// Tomber malade
+	// Deuxième useEffect : gestion de la maladie et de la guérison
+	useEffect(() => {
+		// Si le Tamagotchi atteint le seuil de maladie
 		if (
-			healthState.sickCounter >= CRITICAL_LEVELS.SICK_THRESHOLD &&
+			healthState.sickCounter >= criticalLevels.SICK_THRESHOLD &&
 			!healthState.isSick
 		) {
 			setHealthState((prev) => ({
@@ -119,48 +139,38 @@ export default function useTamagotchiState() {
 			showStatWarning("Ton Tama est tombé malade !");
 		}
 
-		// Guérison
+		// Si le Tamagotchi guérit
 		if (
 			healthState.isSick &&
-			hunger > CRITICAL_LEVELS.RECOVERY_THRESHOLD &&
-			energy > CRITICAL_LEVELS.RECOVERY_THRESHOLD &&
-			cleanliness > CRITICAL_LEVELS.RECOVERY_THRESHOLD
+			stats.hunger > criticalLevels.RECOVERY_THRESHOLD &&
+			stats.energy > criticalLevels.RECOVERY_THRESHOLD &&
+			stats.cleanliness > criticalLevels.RECOVERY_THRESHOLD
 		) {
 			setHealthState({
 				isSick: false,
 				sickCounter: 0,
 			});
-			Toast.show({
-				type: "success",
-				text1: "Bonne nouvelle !",
-				text2: "Ton Tama est guéri 🎉",
-				position: "bottom",
-			});
+			showSnackbar("Bonne nouvelle ! Tama est guéri 🎉");
 		}
-	}, [stats, healthState.sickCounter, healthState.isSick]);
+	}, [healthState.sickCounter, healthState.isSick, stats, showSnackbar]); // Ce useEffect dépend des deux états `healthState` et `stats`
 
-	// Alertes pour les stats critiques
+	// Alertes
 	useEffect(() => {
 		const { hunger, energy, cleanliness } = stats;
 
-		if (hunger <= CRITICAL_LEVELS.HUNGER) {
+		if (hunger <= criticalLevels.HUNGER) {
 			showStatWarning("Ton Tama est affamé !");
 		}
-		if (energy <= CRITICAL_LEVELS.ENERGY) {
+		if (energy <= criticalLevels.ENERGY) {
 			showStatWarning("Ton Tama est épuisé !");
 		}
-		if (cleanliness <= CRITICAL_LEVELS.CLEANLINESS) {
+		if (cleanliness <= criticalLevels.CLEANLINESS) {
 			showStatWarning("Ton Tama est cracra !");
 		}
-	}, [stats]); // Utilisation de stats comme dépendance complète
+	}, [stats]);
 
 	const showStatWarning = (message: string) => {
-		Toast.show({
-			type: "error",
-			text1: "Alerte !",
-			text2: message,
-			position: "bottom",
-		});
+		showSnackbar(message);
 
 		Notifications.scheduleNotificationAsync({
 			content: {
@@ -171,75 +181,100 @@ export default function useTamagotchiState() {
 		});
 	};
 
-	// Actions sur le Tamagotchi
+	const isActionBlocked = (action: ActionName): boolean => {
+		const timestamps = actionHistory[action];
+		const now = Date.now();
+		const recentUses = timestamps.filter(
+			(t) => now - t < abuseDetectionConfig.window,
+		);
+
+		if (recentUses.length >= abuseDetectionConfig.threshold) {
+			if (!blockedActions[action]) {
+				setBlockedActions((prev) => ({ ...prev, [action]: true }));
+				showSnackbar(
+					`Tu as trop utilisé "${action}" récemment. Attends un peu.`,
+				);
+				setTimeout(() => {
+					setBlockedActions((prev) => ({ ...prev, [action]: false }));
+				}, abuseDetectionConfig.blockDuration);
+			}
+			return true;
+		}
+
+		return false;
+	};
+
+	const getEffectiveness = (action: ActionName): number => {
+		const now = Date.now();
+		const lastTime = lastActions[action] || 0;
+		const cooldown = actionCooldowns[action];
+
+		// Historique des actions
+		setActionHistory((prev) => ({
+			...prev,
+			[action]: [...(prev[action] || []), now].filter(
+				(t) => now - t < abuseDetectionConfig.window,
+			),
+		}));
+
+		setLastActions((prev) => ({ ...prev, [action]: now }));
+
+		const isSpammed = now - lastTime < cooldown;
+		return isSpammed ? 0.5 : 1;
+	};
+
 	const actions = {
 		feed: () => {
-			// Si Tama est malade, on lui donne moins de nourriture
-			updateStat("hunger", healthState.isSick ? 5 : 10);
-
-			// Effet de la faim excessive sur le bonheur
-			if (stats.hunger > 90) {
-				updateStat("happiness", -5);
-			}
+			if (isActionBlocked("feed")) return;
+			const efficiency = getEffectiveness("feed");
+			const base = healthState.isSick ? 5 : 10;
+			updateStat("hunger", base * efficiency);
+			if (stats.hunger > 90) updateStat("happiness", -5);
 		},
 
 		play: () => {
-			// Si la faim ou l'énergie sont trop faibles, Tama ne peut pas jouer
+			if (isActionBlocked("play")) return;
+			const efficiency = getEffectiveness("play");
+
 			if (stats.hunger < 20 && stats.energy < 20) {
 				updateStat("happiness", -5);
-				Toast.show({
-					type: "error",
-					text1: "Pas maintenant...",
-					text2: "Tama est trop fatigué et affamé pour jouer.",
-					position: "bottom",
-				});
-			} else {
-				// Normalement, jouer augmente le bonheur
-				updateStat("happiness", healthState.isSick ? 5 : 10);
+				showSnackbar("Tama est trop fatigué et affamé pour jouer.");
+				return;
 			}
 
-			// Effet de la propreté sur le jeu
-			if (stats.cleanliness < 20) {
-				updateStat("happiness", -5);
-			}
+			const base = healthState.isSick ? 5 : 10;
+			updateStat("happiness", base * efficiency);
+
+			if (stats.cleanliness < 20) updateStat("happiness", -5);
 		},
 
 		clean: () => {
-			// Si Tama est malade, on nettoie moins bien
-			updateStat("cleanliness", healthState.isSick ? 5 : 10);
-
-			// Quand Tama est vraiment sale, tout devient moins efficace
+			if (isActionBlocked("clean")) return;
+			const efficiency = getEffectiveness("clean");
+			const base = healthState.isSick ? 5 : 10;
+			updateStat("cleanliness", base * efficiency);
 			if (stats.cleanliness < 10) {
-				Toast.show({
-					type: "error",
-					text1: "Trop sale...",
-					text2:
-						"Tama refuse de faire quoi que ce soit tant qu'il n'est pas propre !",
-					position: "bottom",
-				});
+				showSnackbar(
+					"Tama refuse de faire quoi que ce soit tant qu'il n'est pas propre !",
+				);
 			}
 		},
 
 		rest: () => {
-			// Si Tama est sale, il dort moins bien
+			if (isActionBlocked("rest")) return;
+			const efficiency = getEffectiveness("rest");
 			if (stats.cleanliness < 20) {
-				updateStat("energy", 10);
-				Toast.show({
-					type: "error",
-					text1: "Beurk...",
-					text2: "C'est dégoûtant ici, Tama n'arrive pas à bien dormir.",
-					position: "bottom",
-				});
+				updateStat("energy", 10 * efficiency);
+				showSnackbar("C'est dégoûtant ici, Tama n'arrive pas à bien dormir.");
 			} else {
-				// Si Tama est propre, il récupère bien son énergie
-				updateStat("energy", healthState.isSick ? 10 : 20);
+				const base = healthState.isSick ? 10 : 20;
+				updateStat("energy", base * efficiency);
 			}
 		},
 	};
 
-	// Fonction utilitaire pour les couleurs des jauges
 	const getStatColor = (value: number): string => {
-		if (value <= 20) return "#f0f0f0";
+		if (value <= 20) return "#bde2f0";
 		if (value <= 80) return "#e6aeae";
 		return "#e88484";
 	};

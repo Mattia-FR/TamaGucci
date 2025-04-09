@@ -1,4 +1,3 @@
-// hooks/useNotifications.ts
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 

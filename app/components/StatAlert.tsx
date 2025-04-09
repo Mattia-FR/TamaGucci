@@ -1,31 +1,33 @@
 import { useEffect, useRef } from "react";
-import Toast from "react-native-toast-message";
 import * as Notifications from "expo-notifications";
+import { useSnackbar } from "../utils/SnackbarContext"; // <-- adapte le chemin selon ton arborescence
 
 interface StatAlertProps {
 	hunger: number;
 	energy: number;
 	cleanliness: number;
+	happiness: number;
 }
 
 export default function StatAlert({
 	hunger,
 	energy,
 	cleanliness,
+	happiness,
 }: StatAlertProps) {
+	const { showSnackbar } = useSnackbar(); // <-- hook perso pour afficher le snackbar
+
 	const hasAlerted = useRef({
 		hunger: false,
 		energy: false,
 		cleanliness: false,
+		happiness: false,
 	});
 
 	useEffect(() => {
-		if (hunger < 20 && !hasAlerted.current.hunger) {
-			Toast.show({
-				type: "error",
-				text1: "Alerte Faim",
-				text2: "Ton Tama a très faim !",
-			});
+		// === HUNGER ===
+		if (hunger < 10 && !hasAlerted.current.hunger) {
+			showSnackbar("Ton Tama a très faim !");
 			Notifications.scheduleNotificationAsync({
 				content: {
 					title: "Ton Tama a faim !",
@@ -34,16 +36,16 @@ export default function StatAlert({
 				trigger: null,
 			});
 			hasAlerted.current.hunger = true;
-		} else if (hunger <= 80) {
+		} else if (hunger < 20 && !hasAlerted.current.hunger) {
+			showSnackbar("Ton Tama commence à avoir faim...");
+			hasAlerted.current.hunger = true;
+		} else if (hunger >= 20) {
 			hasAlerted.current.hunger = false;
 		}
 
-		if (energy < 20 && !hasAlerted.current.energy) {
-			Toast.show({
-				type: "error",
-				text1: "Alerte Énergie",
-				text2: "Ton Tama est épuisé !",
-			});
+		// === ENERGY ===
+		if (energy < 10 && !hasAlerted.current.energy) {
+			showSnackbar("Ton Tama est épuisé !");
 			Notifications.scheduleNotificationAsync({
 				content: {
 					title: "Ton Tama est fatigué 😴",
@@ -52,16 +54,16 @@ export default function StatAlert({
 				trigger: null,
 			});
 			hasAlerted.current.energy = true;
+		} else if (energy < 20 && !hasAlerted.current.energy) {
+			showSnackbar("Ton Tama commence à fatiguer...");
+			hasAlerted.current.energy = true;
 		} else if (energy >= 20) {
 			hasAlerted.current.energy = false;
 		}
 
-		if (cleanliness < 20 && !hasAlerted.current.cleanliness) {
-			Toast.show({
-				type: "error",
-				text1: "Alerte Propreté",
-				text2: "Ton Tama est crado !",
-			});
+		// === CLEANLINESS ===
+		if (cleanliness < 10 && !hasAlerted.current.cleanliness) {
+			showSnackbar("Ton Tama est crado !");
 			Notifications.scheduleNotificationAsync({
 				content: {
 					title: "Ton Tama est sale ! 🧼",
@@ -70,10 +72,31 @@ export default function StatAlert({
 				trigger: null,
 			});
 			hasAlerted.current.cleanliness = true;
+		} else if (cleanliness < 20 && !hasAlerted.current.cleanliness) {
+			showSnackbar("Ton Tama commence à se salir...");
+			hasAlerted.current.cleanliness = true;
 		} else if (cleanliness >= 20) {
 			hasAlerted.current.cleanliness = false;
 		}
-	}, [hunger, energy, cleanliness]);
 
-	return null; // On n'affiche plus de texte direct ici
+		// === HAPPINESS ===
+		if (happiness < 10 && !hasAlerted.current.happiness) {
+			showSnackbar("Ton Tama est déprimé 😢");
+			Notifications.scheduleNotificationAsync({
+				content: {
+					title: "Ton Tama est triste 😢",
+					body: "Joue avec lui pour le rendre heureux !",
+				},
+				trigger: null,
+			});
+			hasAlerted.current.happiness = true;
+		} else if (happiness < 20 && !hasAlerted.current.happiness) {
+			showSnackbar("Ton Tama n'est pas très joyeux...");
+			hasAlerted.current.happiness = true;
+		} else if (happiness >= 20) {
+			hasAlerted.current.happiness = false;
+		}
+	}, [hunger, energy, cleanliness, happiness, showSnackbar]);
+
+	return null;
 }

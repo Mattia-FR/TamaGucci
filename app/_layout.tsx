@@ -1,15 +1,18 @@
 import { Stack } from "expo-router";
-import Toast from "react-native-toast-message";
-import { toastConfig } from "./utils/toastConfig";
+import { PaperProvider } from "react-native-paper";
+import { SnackbarProvider } from "./utils/SnackbarContext";
 
 export default function Layout() {
 	return (
 		<>
-			<Stack>
-				<Stack.Screen name="index" options={{ title: "TamaGucci" }} />
-				<Stack.Screen name="about" options={{ title: "À propos" }} />
-			</Stack>
-			<Toast config={toastConfig} />
+			<PaperProvider>
+				<SnackbarProvider>
+					<Stack screenOptions={{ headerShown: false }}>
+						<Stack.Screen name="index" />
+						<Stack.Screen name="about" />
+					</Stack>
+				</SnackbarProvider>
+			</PaperProvider>
 		</>
 	);
 }
