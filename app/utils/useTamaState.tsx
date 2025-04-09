@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSnackbar } from "../utils/SnackbarContext";
+import * as Notifications from "expo-notifications";
 
 type ActionName = "feed" | "play" | "clean" | "rest";
 

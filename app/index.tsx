@@ -1,6 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Snackbar } from "react-native-paper";
-
+import { View, Text, StyleSheet, Button } from "react-native";
 import FeedTama from "./components/FeedTama";
 import PlayWithTama from "./components/PlayWithTama";
 import CleanTama from "./components/CleanTama";
@@ -13,11 +11,9 @@ import useTamaState from "./utils/useTamaState";
 import useFonts from "./utils/useFonts";
 import useNotifications from "./utils/useNotifications";
 import useTamaAge from "./utils/useTamaAge";
+import { useSnackbar } from "./utils/SnackbarContext";
 
-import { useState } from "react";
-import { Button } from "react-native";
-
-export default function IndexScreen() {
+export default function Index() {
 	// Initialiser les notifications
 	useNotifications();
 
@@ -30,9 +26,7 @@ export default function IndexScreen() {
 	// Gérer l'état du Tama
 	const { stats, healthState, actions, getStatColor } = useTamaState();
 
-	const [visible, setVisible] = useState(false);
-	const showSnackbar = () => setVisible(true);
-	const hideSnackbar = () => setVisible(false);
+	const { showSnackbar } = useSnackbar();
 
 	// Si les polices ne sont pas chargées, affiche un écran de chargement
 	if (!fontsLoaded) {
@@ -70,17 +64,10 @@ export default function IndexScreen() {
 
 			<PetAnimation isSick={healthState.isSick} style={styles.petAnim} />
 
-			<Button title="Show Snackbar" onPress={showSnackbar} />
-			<Snackbar
-				visible={visible}
-				onDismiss={hideSnackbar}
-				action={{
-					label: "Fermer",
-					onPress: hideSnackbar,
-				}}
-			>
-				C'est un message Snackbar !
-			</Snackbar>
+			<Button
+				title="TEST Snackbar"
+				onPress={() => showSnackbar("Ceci est un message de test 🚀")}
+			/>
 		</View>
 	);
 }
