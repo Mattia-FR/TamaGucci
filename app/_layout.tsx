@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import Toast from "react-native-toast-message";
+import { toastConfig } from "./utils/toastConfig";
 
 export default function Layout() {
 	return (
@@ -8,7 +9,7 @@ export default function Layout() {
 				<Stack.Screen name="index" options={{ title: "TamaGucci" }} />
 				<Stack.Screen name="about" options={{ title: "À propos" }} />
 			</Stack>
-			<Toast />
+			<Toast config={toastConfig} />
 		</>
 	);
 }

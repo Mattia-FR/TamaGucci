@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Font from "expo-font";
 import Toast from "react-native-toast-message";
-import * as Progress from "react-native-progress"; // Importation du composant Progress
 
 import FeedTama from "./components/FeedTama";
 import PlayWithTama from "./components/PlayWithTama";
@@ -11,6 +10,8 @@ import CleanTama from "./components/CleanTama";
 import RestTama from "./components/RestTama";
 import StatAlert from "./components/StatAlert";
 import PetAnimation from "./components/PetAnimation";
+import StatBars from "./components/StatBars";
+import { toastConfig } from "./utils/toastConfig";
 
 // Config des notifications (obligatoire pour Android)
 Notifications.setNotificationHandler({
@@ -40,7 +41,7 @@ export default function IndexScreen() {
 		} catch (error) {
 			console.error("Erreur de chargement des polices : ", error);
 		}
-	}, []); // Pas de dépendance car cette fonction ne dépend de rien d'autre
+	}, []);
 
 	// Chargement des polices et gestion de l'état des notifications
 	useEffect(() => {
@@ -55,9 +56,10 @@ export default function IndexScreen() {
 
 		// Intervalle de mise à jour des stats du Tamagotchi
 		const interval = setInterval(() => {
-			setHunger((prev) => Math.min(prev + 5, 100));
+			setHunger((prev) => Math.max(prev - 5, 0)); // il a de plus en plus faim
 			setCleanliness((prev) => Math.max(prev - 5, 0));
 			setEnergy((prev) => Math.max(prev - 5, 0));
+			setHappiness((prev) => Math.max(prev - 5, 0)); // il devient triste
 			setAge((prev) => prev + 1);
 		}, 100000);
 
@@ -115,57 +117,13 @@ export default function IndexScreen() {
 			<Text style={styles.textText}>Âge: {age}</Text>
 
 			{/* Affichage des jauges pour chaque stat */}
-			<View style={styles.statsContainer}>
-				<View style={styles.statsRow}>
-					<View style={styles.statColumn}>
-						<Text style={styles.statLabel}>Humeur</Text>
-						<Progress.Bar
-							progress={happiness / 100}
-							width={100}
-							height={15}
-							color={getStatColor(happiness)} // Couleur dynamique
-							unfilledColor="#bde2f0"
-							borderRadius={8}
-						/>
-					</View>
-					<View style={styles.statColumn}>
-						<Text style={styles.statLabel}>Satiété</Text>
-						<Progress.Bar
-							progress={hunger / 100}
-							width={100}
-							height={15}
-							color={getStatColor(hunger)} // Couleur dynamique
-							unfilledColor="#bde2f0"
-							borderRadius={8}
-						/>
-					</View>
-				</View>
-
-				<View style={styles.statsRow}>
-					<View style={styles.statColumn}>
-						<Text style={styles.statLabel}>Propreté</Text>
-						<Progress.Bar
-							progress={cleanliness / 100}
-							width={100}
-							height={15}
-							color={getStatColor(cleanliness)} // Couleur dynamique
-							unfilledColor="#bde2f0"
-							borderRadius={8}
-						/>
-					</View>
-					<View style={styles.statColumn}>
-						<Text style={styles.statLabel}>Énergie</Text>
-						<Progress.Bar
-							progress={energy / 100}
-							width={100}
-							height={15}
-							color={getStatColor(energy)} // Couleur dynamique
-							unfilledColor="#bde2f0"
-							borderRadius={8}
-						/>
-					</View>
-				</View>
-			</View>
+			<StatBars
+				happiness={happiness}
+				hunger={hunger}
+				cleanliness={cleanliness}
+				energy={energy}
+				getStatColor={getStatColor}
+			/>
 
 			{/* Affichage de l'animation du Tama */}
 			<PetAnimation />
@@ -181,7 +139,7 @@ export default function IndexScreen() {
 			</View>
 
 			{/* Afficheur global pour les toasts */}
-			<Toast />
+			<Toast config={toastConfig} />
 		</View>
 	);
 }
@@ -212,11 +170,11 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		justifyContent: "space-around",
 		width: "100%",
-		marginBottom: 20, // Espacement entre les lignes
+		marginBottom: 20,
 	},
 	statColumn: {
 		alignItems: "center",
-		width: "45%", // Chaque colonne occupe environ la moitié de l'écran
+		width: "45%",
 	},
 	statLabel: {
 		fontFamily: "TextFont",
