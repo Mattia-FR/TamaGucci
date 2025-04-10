@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSnackbar } from "../utils/SnackbarContext";
+import { useSnackbar } from "../utils/contexts/SnackbarContext";
 
 interface StatAlertProps {
 	hunger: number;

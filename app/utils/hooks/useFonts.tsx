@@ -7,12 +7,13 @@ export default function useFonts() {
 	const loadFonts = useCallback(async () => {
 		try {
 			await Font.loadAsync({
-				TitleFont: require("../../assets/fonts/Pacifico-Regular.ttf"),
-				TextFont: require("../../assets/fonts/Itim-Regular.ttf"),
+				TitleFont: require("../../../assets/fonts/Pacifico-Regular.ttf"),
+				TextFont: require("../../../assets/fonts/Itim-Regular.ttf"),
 			});
 			setFontsLoaded(true);
 		} catch (error) {
 			console.error("Erreur de chargement des polices : ", error);
+			setFontsLoaded(true);
 		}
 	}, []);
 

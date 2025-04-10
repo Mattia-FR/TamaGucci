@@ -7,11 +7,11 @@ import StatAlert from "./components/StatAlert";
 import PetAnimation from "./components/PetAnimation";
 import StatBars from "./components/StatBars";
 
-import useTamaState from "./utils/useTamaState";
-import useFonts from "./utils/useFonts";
-import useNotifications from "./utils/useNotifications";
-import useTamaAge from "./utils/useTamaAge";
-import { useSnackbar } from "./utils/SnackbarContext";
+import useTamaState from "./utils/hooks/useTamaState";
+import useFonts from "./utils/hooks/useFonts";
+import useNotifications from "./utils/hooks/useNotifications";
+import useTamaAge from "./utils/hooks/useTamaAge";
+import { useSnackbar } from "./utils/contexts/SnackbarContext";
 
 export default function Index() {
 	// Initialiser les notifications

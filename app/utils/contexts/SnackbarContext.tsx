@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
 	message: {
 		color: "#fff",
 		fontSize: 14,
-		fontFamily: "TitleFont",
+		fontFamily: "TextFont",
 	},
 	actionLabel: {
 		color: "#fff",
