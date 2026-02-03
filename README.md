@@ -1,50 +1,64 @@
-# Welcome to your Expo app 👋
+# TamaGucci
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Application mobile type Tamagotchi développée en 3 jours lors d'un hackathon à la Wild Code School. J'ai choisi React Native pour découvrir le développement mobile.
 
-## Get started
+## 🎯 Contexte
 
-1. Install dependencies
+Hackathon de 3 jours avec choix entre Unity et React Native. 
+Premier projet mobile : j'ai découvert React Native, Expo, et la gestion d'état complexe sous contrainte de temps.
+
+## Fonctionnalités
+
+- **Animal virtuel (Tama-chan)** avec animation Lottie
+- **4 statistiques** à gérer : bonheur, faim, propreté, énergie
+- **4 actions** : nourrir, jouer, nettoyer, se reposer (avec temps de recharge pour éviter le spam)
+- **État de santé** : Tama-chan peut tomber malade si les stats critiques restent basses trop longtemps
+- **Âge** du Tama affiché et suivi dans le temps
+- **Décroissance automatique** des stats au fil du temps (intervalles configurables)
+- **Détection d’abus** : blocage temporaire des actions en cas de clics trop répétés
+- **Notifications** pour ne pas oublier de s’occuper de votre Tama
+- **Snackbar** pour les retours utilisateur
+- **Écran À propos** avec les infos sur le jeu
+- **Persistance** des données avec AsyncStorage
+
+## Stack technique
+
+- **Expo** (~52) avec **expo-router** (routing par fichiers)
+- **React Native** + **TypeScript**
+- **React Native Paper** (UI)
+- **Lottie** (animations du pet)
+- **React Native Reanimated** & **Gesture Handler**
+- **expo-notifications** pour les rappels
+
+## Démarrage
+
+1. **Installer les dépendances**
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. **Lancer l’app**
 
    ```bash
-    npx expo start
+   npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   Ensuite, ouvrez l’app dans un émulateur Android/iOS, un simulateur ou **Expo Go**.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Structure du projet
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- `app/` — écrans et routing (index, about)
+- `app/components/` — composants (FeedTama, PlayWithTama, CleanTama, RestTama, StatBars, StatAlert, PetAnimation, ActionButton)
+- `app/utils/core/` — types, reducer d’état, configuration (limites, décroissance, cooldowns, détection d’abus)
+- `app/utils/hooks/` — `useTamaState`, `useFonts`, `useNotifications`, `useTamaAge`
+- `app/utils/contexts/` — SnackbarContext
+- `assets/` — polices, images, animations Lottie
 
-## Get a fresh project
+## Configuration
 
-When you're ready, run:
+Les constantes (niveaux critiques, intervalles de décroissance, cooldowns des actions, détection d’abus) sont centralisées dans `app/utils/core/config.ts`.
 
-```bash
-npm run reset-project
-```
+---
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Projet réalisé dans le cadre de la **Wild Code School**.
